@@ -3,8 +3,8 @@
     "base_directory": "./frontend/dist",
     "aliases": [
         {
-            "alias": "/",
-            "real": "/index.html"
+            "display": "/",
+            "local": "index.html"
         }
     ]
 }
