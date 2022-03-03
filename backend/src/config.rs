@@ -6,6 +6,8 @@ use std::fs::File;
 use std::io;
 use std::path::{Path, PathBuf};
 
+const SERVER_CONFIGURATION_FILENAME: &str = "server_configuration.json";
+
 /// Intermediate file representation of configurations
 pub(crate) mod proto {
     use serde::{Deserialize, Serialize};
@@ -73,7 +75,7 @@ fn find_file_in_ancestors(directory: &Path, file_name: &Path) -> Option<PathBuf>
 pub fn get_configuration(
     search_start: &Path,
 ) -> Result<proto::ConfigurationPrototype, ConfigurationError> {
-    let goal = Path::new("server_configuration.json");
+    let goal = Path::new(SERVER_CONFIGURATION_FILENAME);
     let path = match find_file_in_ancestors(&search_start, &goal) {
         Some(p) => p,
         None => return Err(ConfigurationError::NotFound),
