@@ -20,14 +20,7 @@ pub(crate) mod proto {
     #[derive(Debug, Serialize, Deserialize)]
     pub struct ConfigurationPrototype {
         pub base_directory: String,
-        pub aliases: Vec<PathAliasPrototype>,
         pub port: u16,
-    }
-
-    #[derive(Debug, Serialize, Deserialize)]
-    pub struct PathAliasPrototype {
-        pub display: String,
-        pub local: String,
     }
 }
 
@@ -62,11 +55,11 @@ impl Error for ConfigurationError {}
 ///
 /// All ancestors of `directory` will be tested to see if `[ancestor]/file_name`
 /// is a file. The first `[ancestor]/file_name` path will be returned.
-fn find_file_in_ancestors(directory: &Path, file_name: &Path) -> Option<PathBuf> {
+fn find_file_in_ancestors(directory: &Path, file_name: &Path) -> Option<(PathBuf, PathBuf)> {
     for dir in directory.ancestors() {
         let possible_path = dir.join(file_name);
         if possible_path.is_file() {
-            return Some(possible_path);
+            return Some((dir.to_path_buf(), possible_path));
         }
     }
     None
@@ -78,19 +71,17 @@ fn find_file_in_ancestors(directory: &Path, file_name: &Path) -> Option<PathBuf>
 /// ancestors.
 pub fn get_configuration(search_start: &Path) -> Result<Configuration, ConfigurationError> {
     let goal = Path::new(SERVER_CONFIGURATION_FILENAME);
-    let path = match find_file_in_ancestors(&search_start, &goal) {
-        Some(p) => p,
-        None => return Err(ConfigurationError::NotFound),
-    };
-    let path = path.canonicalize()?;
+    let (directory, configuration_path) = find_file_in_ancestors(&search_start, &goal)
+        .ok_or(ConfigurationError::NotFound)?;
 
-    let file = File::open(path)?;
+    let file = File::open(&configuration_path)?;
 
     let raw_config = serde_json::from_reader(file)?;
 
     Ok(Configuration {
         proto: raw_config,
-        proto_path: path.parent(),
+        config_directory: directory,
+        config_path: configuration_path,
     })
 }
 
@@ -98,7 +89,8 @@ pub fn get_configuration(search_start: &Path) -> Result<Configuration, Configura
 pub struct Configuration {
     proto: proto::ConfigurationPrototype,
     /// Where the "server_configuration.json" file was found
-    proto_path: PathBuf,
+    config_directory: PathBuf,
+    config_path: PathBuf,
 }
 
 impl Configuration {
@@ -110,28 +102,18 @@ impl Configuration {
     ///
     /// Aliases take priority over files with the same name.
     pub fn make_static_filter(&self) -> BoxedFilter<(impl Reply,)> {
-        let mut result = filters::any::any();
         let local_directory: PathBuf = {
-            let path = self.proto_path.join(self.proto.base_directory);
+            let path = self.config_directory.join(&self.proto.base_directory);
             if let Ok(canon) = path.canonicalize() {
                 canon
             } else {
                 path
             }
-        }.to_path_buf();
+        };
 
-        for alias in self.proto.aliases {
-            let mut display: String = String::from(alias.display.trim_start_matches("/"));
-            let local = Path::new(&alias.local);
-            let rule = filters::path::path(&display);
-            let file_filter = filters::fs::file(&local);
-            result = result.or(rule).and(file_filter);
-        }
-
+        let method_filter = filters::method::get().or(filters::method::head()).unify();
         let directory_filter = filters::fs::dir(local_directory);
 
-        result = result.or(directory_filter); // lowest priority
-
-        result
+        method_filter.and(directory_filter).boxed()
     }
 }

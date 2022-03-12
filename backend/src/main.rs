@@ -17,12 +17,11 @@ async fn main() {
 
     log::info!("Configuration: {:?}", config);
 
-    let filter = warp::filters::log::log(name);
-
-    let api = warp::path!("api" / String).map(|path| format!("{:?}", path));
+    let api = filters::path::path("api");
+    let api_reply = api.map(|| format!("This is api.\n"));
     let static_files = config.make_static_filter();
 
-    let filter = filter.or(api).or(static_files);
+    let filter = api_reply.or(static_files);
 
     let server = warp::serve(filter).run(socket);
     server.await

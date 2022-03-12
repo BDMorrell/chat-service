@@ -1,10 +1,4 @@
 {
     "port": 8080,
-    "base_directory": "./frontend/dist",
-    "aliases": [
-        {
-            "display": "/",
-            "local": "index.html"
-        }
-    ]
+    "base_directory": "./frontend/dist"
 }
