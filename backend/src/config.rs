@@ -1,3 +1,7 @@
+//! Utilities for configuration files.
+//!
+//! To load and use configurations, see [`Configuration`]. All errors will be of
+//! type [`ConfigurationError`].
 use serde_json;
 use std::error::Error;
 use std::fmt::Display;
@@ -10,25 +14,33 @@ use warp::{
     Filter, Reply,
 };
 
+
+/// The default filename for the configuration file.
 const SERVER_CONFIGURATION_FILENAME: &str = "server_configuration.json";
 
-/// Intermediate file representation of configurations
+/// File 'schemas' for the configuration file
 pub(crate) mod proto {
     use serde::{Deserialize, Serialize};
 
-    /// This is the main file type/schema
+    /// This is the main file 'schema'
     #[derive(Debug, Serialize, Deserialize)]
     pub struct ConfigurationPrototype {
+        /// Where the static content to should be found at.
         pub base_directory: String,
+        /// Which port the server is to listen from.
         pub port: u16,
     }
 }
 
-/// The `config` module error type.
+/// The list of errors that may come from trying to use the configuration file.
 #[derive(Debug)]
 pub enum ConfigurationError {
+    /// The configuration file could not be found.
     NotFound,
+    /// For errors that are from [`io`].
     IoError(io::Error),
+    /// For errors that are from [`serde`], or packages that implement file
+    /// formats.
     SerdeError(serde_json::Error),
 }
 
@@ -85,30 +97,39 @@ pub fn get_configuration(search_start: &Path) -> Result<Configuration, Configura
     })
 }
 
+/// Configuration information holder.
 #[derive(Debug)]
 pub struct Configuration {
+    /// The parsed contents of the configuration file.
     proto: proto::ConfigurationPrototype,
-    /// Where the "server_configuration.json" file was found
+    /// Where the configuration file was found.
+    ///
+    /// See [`Self::get_configuration_directory`].
     config_directory: PathBuf,
+    /// Path to the configuration file.
     config_path: PathBuf,
 }
 
 impl Configuration {
+    /// Returns the port to be used.
     pub fn get_port(&self) -> u16 {
         self.proto.port
     }
 
+    /// Returns the directory where the configuration file was found.
+    ///
+    /// This is especially useful for decoding relative file paths that were in
+    /// the configuration file.
     pub fn get_configuration_directory(&self) -> &Path {
         self.config_directory.as_path()
     }
 
+    /// Returns the [`Path`] to the configuration file.
     pub fn get_configuration_file_path(&self) -> &Path {
         self.config_path.as_path()
     }
 
     /// Makes a static file server filter.
-    ///
-    /// Aliases take priority over files with the same name.
     pub fn make_static_filter(&self) -> BoxedFilter<(impl Reply,)> {
         let local_directory: PathBuf = {
             let path = self.config_directory.join(&self.proto.base_directory);
