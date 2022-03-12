@@ -71,8 +71,8 @@ fn find_file_in_ancestors(directory: &Path, file_name: &Path) -> Option<(PathBuf
 /// ancestors.
 pub fn get_configuration(search_start: &Path) -> Result<Configuration, ConfigurationError> {
     let goal = Path::new(SERVER_CONFIGURATION_FILENAME);
-    let (directory, configuration_path) = find_file_in_ancestors(&search_start, &goal)
-        .ok_or(ConfigurationError::NotFound)?;
+    let (directory, configuration_path) =
+        find_file_in_ancestors(search_start, goal).ok_or(ConfigurationError::NotFound)?;
 
     let file = File::open(&configuration_path)?;
 
@@ -96,6 +96,14 @@ pub struct Configuration {
 impl Configuration {
     pub fn get_port(&self) -> u16 {
         self.proto.port
+    }
+
+    pub fn get_configuration_directory(&self) -> &Path {
+        self.config_directory.as_path()
+    }
+
+    pub fn get_configuration_file_path(&self) -> &Path {
+        self.config_path.as_path()
     }
 
     /// Makes a static file server filter.

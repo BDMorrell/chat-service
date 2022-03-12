@@ -1,6 +1,3 @@
-use log;
-use pretty_env_logger;
-
 pub mod config;
 
 /// Initalize the logging system.

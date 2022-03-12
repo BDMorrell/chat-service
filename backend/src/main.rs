@@ -1,5 +1,3 @@
-use chat_backend;
-use log;
 use std::env;
 use std::net::{IpAddr, Ipv6Addr, SocketAddr};
 use warp::{self, filters, Filter};
@@ -18,7 +16,7 @@ async fn main() {
     log::info!("Configuration: {:?}", config);
 
     let api = filters::path::path("api");
-    let api_reply = api.map(|| format!("This is api.\n"));
+    let api_reply = api.map(|| "This is api.\n");
     let static_files = config.make_static_filter();
 
     let filter = api_reply.or(static_files);
