@@ -14,12 +14,11 @@ use warp::{
     Filter, Reply,
 };
 
-
 /// The default filename for the configuration file.
-const SERVER_CONFIGURATION_FILENAME: &str = "server_configuration.json";
+pub const DEFAULT_CONFIGURATION_FILENAME: &str = "server_configuration.json";
 
 /// File 'schemas' for the configuration file
-pub(crate) mod proto {
+mod proto {
     use serde::{Deserialize, Serialize};
 
     /// This is the main file 'schema'
@@ -37,6 +36,8 @@ pub(crate) mod proto {
 pub enum ConfigurationError {
     /// The configuration file could not be found.
     NotFound,
+    /// The specified configuration path is invalid.
+    InvalidPath,
     /// For errors that are from [`io`].
     IoError(io::Error),
     /// For errors that are from [`serde`], or packages that implement file
@@ -63,40 +64,6 @@ impl From<serde_json::Error> for ConfigurationError {
 
 impl Error for ConfigurationError {}
 
-/// Tries to find a file in a directory or its ancestors.
-///
-/// All ancestors of `directory` will be tested to see if `[ancestor]/file_name`
-/// is a file. The first `[ancestor]/file_name` path will be returned.
-fn find_file_in_ancestors(directory: &Path, file_name: &Path) -> Option<(PathBuf, PathBuf)> {
-    for dir in directory.ancestors() {
-        let possible_path = dir.join(file_name);
-        if possible_path.is_file() {
-            return Some((dir.to_path_buf(), possible_path));
-        }
-    }
-    None
-}
-
-/// Tries to find and read a configuration file.
-///
-/// The configuration file will be searched from the specified path and its
-/// ancestors.
-pub fn get_configuration(search_start: &Path) -> Result<Configuration, ConfigurationError> {
-    let goal = Path::new(SERVER_CONFIGURATION_FILENAME);
-    let (directory, configuration_path) =
-        find_file_in_ancestors(search_start, goal).ok_or(ConfigurationError::NotFound)?;
-
-    let file = File::open(&configuration_path)?;
-
-    let raw_config = serde_json::from_reader(file)?;
-
-    Ok(Configuration {
-        proto: raw_config,
-        config_directory: directory,
-        config_path: configuration_path,
-    })
-}
-
 /// Configuration information holder.
 #[derive(Debug)]
 pub struct Configuration {
@@ -108,6 +75,56 @@ pub struct Configuration {
     config_directory: PathBuf,
     /// Path to the configuration file.
     config_path: PathBuf,
+}
+
+impl Configuration {
+    //! This impl is for utilities for finding and loading a configuration file.
+
+    /// Try to find and load a configuration from a specified directory.
+    pub fn from_directory_or_ancestors(
+        directory: &Path,
+        file_name: &Path,
+    ) -> Result<Configuration, ConfigurationError> {
+        let configuration_file_path: PathBuf = Self::find_configuration_file(directory, file_name)
+            .ok_or(ConfigurationError::NotFound)?;
+        Self::from_file(&configuration_file_path)
+    }
+
+    /// Create a [`Configuration`] from a specified file.
+    pub fn from_file(file_name: &Path) -> Result<Configuration, ConfigurationError> {
+        let config_path = file_name.to_path_buf();
+        let config_directory = file_name
+            .parent()
+            .ok_or(ConfigurationError::InvalidPath)?
+            .to_path_buf();
+
+        let file = File::open(config_path.clone())?;
+
+        let proto = serde_json::from_reader(file)?;
+
+        Ok(Configuration {
+            proto,
+            config_directory,
+            config_path,
+        })
+    }
+
+    /// Find the configuration file by looking in a directory and its ancestors.
+    ///
+    /// The configuration file path returned is in the nearest ancestor of the
+    /// specified directory.
+    ///
+    /// # Note
+    /// The ancestry of the given directory is based on [`Path::ancestors`].
+    fn find_configuration_file(directory: &Path, file_name: &Path) -> Option<PathBuf> {
+        for dir in directory.ancestors() {
+            let possible_path = dir.join(file_name);
+            if possible_path.is_file() {
+                return Some(possible_path);
+            }
+        }
+        None
+    }
 }
 
 impl Configuration {
