@@ -146,20 +146,16 @@ impl Configuration {
         self.config_path.as_path()
     }
 
+    /// Returns the path to the static file directory.
+    ///
+    /// The result has been canonicalized, if possible.
+    pub fn get_static_file_directory(&self) -> PathBuf {
+        let path = self.config_directory.join(&self.proto.base_directory);
+        path.canonicalize().ok().unwrap_or(path)
+    }
+
     /// Makes a static file server filter.
-    pub fn make_static_filter(&self) -> BoxedFilter<(impl Reply,)> {
-        let local_directory: PathBuf = {
-            let path = self.config_directory.join(&self.proto.base_directory);
-            if let Ok(canon) = path.canonicalize() {
-                canon
-            } else {
-                path
-            }
-        };
-
-        let method_filter = filters::method::get().or(filters::method::head()).unify();
-        let directory_filter = filters::fs::dir(local_directory);
-
-        method_filter.and(directory_filter).boxed()
+    pub fn make_static_file_filter(&self) -> BoxedFilter<(impl Reply,)> {
+        filters::fs::dir(self.get_static_file_directory()).boxed()
     }
 }

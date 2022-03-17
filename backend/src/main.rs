@@ -19,7 +19,7 @@ async fn main() {
 
     let api = filters::path::path("api");
     let api_reply = api.map(|| "This is api.\n");
-    let static_files = config.make_static_filter();
+    let static_files = config.make_static_file_filter();
 
     let filter = api_reply.or(static_files);
 
