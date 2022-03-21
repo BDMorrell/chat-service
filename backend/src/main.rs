@@ -21,13 +21,17 @@ async fn main() {
 
     log::info!("Configuration: {:?}", config);
 
+    let server = make_filtered_server(config);
+    server.run(socket).await
+}
+
+fn make_filtered_server(
+    config: chat_backend::config::Configuration,
+) -> warp::Server<impl Filter<Extract = impl Reply> + Clone + Send + Sync + 'static> {
     let api = make_api();
     let static_files = config.make_static_file_filter();
-
     let routes = api.or(static_files);
-
-    let server = warp::serve(routes).run(socket);
-    server.await
+    warp::serve(routes)
 }
 
 fn make_api() -> BoxedFilter<(impl Reply,)> {
