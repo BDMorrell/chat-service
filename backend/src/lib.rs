@@ -27,8 +27,6 @@ pub mod warp_server {
     use warp::path::FullPath;
     use warp::{self, Filter, Reply};
     pub async fn serve_warp() {
-        init_log(false);
-
         let config = config::get_configuration_from_current_directory()
             .expect("Could not load configuration.");
 
