@@ -20,9 +20,7 @@ pub fn init_log(is_test: bool) {
 
 pub mod warp_server {
     use super::*;
-    use std::env;
     use std::net::{IpAddr, Ipv6Addr, SocketAddr};
-    use std::path::Path;
     use warp::filters::{self, BoxedFilter};
     use warp::http::{header::HeaderMap, Method};
     use warp::hyper::body::Bytes;
@@ -31,11 +29,8 @@ pub mod warp_server {
     pub async fn serve_warp() {
         init_log(false);
 
-        let config = config::Configuration::from_directory_or_ancestors(
-            &env::current_dir().expect("Could not find current working directory!"),
-            Path::new(config::DEFAULT_CONFIGURATION_FILENAME),
-        )
-        .expect("Could not load configuration file!");
+        let config = config::get_configuration_from_current_directory()
+            .expect("Could not load configuration.");
 
         let socket = SocketAddr::new(IpAddr::V6(Ipv6Addr::LOCALHOST), config.get_port());
 

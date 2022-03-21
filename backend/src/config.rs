@@ -3,6 +3,7 @@
 //! To load and use configurations, see [`Configuration`]. All errors will be of
 //! type [`ConfigurationError`].
 use serde_json;
+use std::env;
 use std::error::Error;
 use std::fmt::Display;
 use std::fmt::{self, Debug, Formatter};
@@ -13,6 +14,14 @@ use warp::{
     filters::{self, BoxedFilter},
     Filter, Reply,
 };
+
+pub fn get_configuration_from_current_directory() -> Result<Configuration, ConfigurationError> {
+    let current_directory = env::current_dir()?;
+    Configuration::from_directory_or_ancestors(
+        &current_directory,
+        Path::new(DEFAULT_CONFIGURATION_FILENAME),
+    )
+}
 
 /// The default filename for the configuration file.
 pub const DEFAULT_CONFIGURATION_FILENAME: &str = "server_configuration.json";
