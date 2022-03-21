@@ -1,10 +1,11 @@
 use std::env;
 use std::net::{IpAddr, Ipv6Addr, SocketAddr};
 use std::path::Path;
+use warp::filters::{self, BoxedFilter};
 use warp::http::{header::HeaderMap, Method};
 use warp::hyper::body::Bytes;
 use warp::path::FullPath;
-use warp::{self, filters, Filter};
+use warp::{self, Filter, Reply};
 
 #[tokio::main]
 async fn main() {
@@ -20,10 +21,20 @@ async fn main() {
 
     log::info!("Configuration: {:?}", config);
 
+    let api = make_api();
+    let static_files = config.make_static_file_filter();
+
+    let routes = api.or(static_files);
+
+    let server = warp::serve(routes).run(socket);
+    server.await
+}
+
+fn make_api() -> BoxedFilter<(impl Reply,)> {
     let hello = filters::path::path("hello")
         .and(filters::method::get())
-        .map(|| {"Hello, world!"});
-    const ECHO_BODY_LENGTH_LIMIT: u64 = 1024 * 8;
+        .map(|| "Hello, world!");
+    // const ECHO_BODY_LENGTH_LIMIT: u64 = 1024 * 8;
     let echo = filters::path::path("echo")
         // .and(filters::header::optional("name"))
         // .and(filters::body::content_length_limit(ECHO_BODY_LENGTH_LIMIT))
@@ -54,11 +65,5 @@ async fn main() {
         )
         .with(filters::reply::header("Content-Type", "text/plain"));
 
-    let api = filters::path::path("api").and(echo.or(hello));
-    let static_files = config.make_static_file_filter();
-
-    let routes = api.or(static_files);
-
-    let server = warp::serve(routes).run(socket);
-    server.await
+    filters::path::path("api").and(echo.or(hello)).boxed()
 }
