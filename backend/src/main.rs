@@ -1,14 +1,22 @@
 use std::env;
 use std::net::{IpAddr, Ipv6Addr, SocketAddr};
 use std::path::Path;
+use tokio::runtime;
 use warp::filters::{self, BoxedFilter};
 use warp::http::{header::HeaderMap, Method};
 use warp::hyper::body::Bytes;
 use warp::path::FullPath;
 use warp::{self, Filter, Reply};
 
-#[tokio::main]
-async fn main() {
+fn main() {
+    runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(serve_warp());
+}
+
+async fn serve_warp() {
     chat_backend::init_log(false);
 
     let config = chat_backend::config::Configuration::from_directory_or_ancestors(
