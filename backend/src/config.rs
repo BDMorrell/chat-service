@@ -138,7 +138,7 @@ impl Configuration {
 
 impl Configuration {
     /// Returns the port to be used.
-    pub fn get_port(&self) -> u16 {
+    pub fn port(&self) -> u16 {
         self.proto.port
     }
 
@@ -146,25 +146,25 @@ impl Configuration {
     ///
     /// This is especially useful for decoding relative file paths that were in
     /// the configuration file.
-    pub fn get_configuration_directory(&self) -> &Path {
+    pub fn configuration_directory(&self) -> &Path {
         self.config_directory.as_path()
     }
 
     /// Returns the [`Path`] to the configuration file.
-    pub fn get_configuration_file_path(&self) -> &Path {
+    pub fn configuration_file_path(&self) -> &Path {
         self.config_path.as_path()
     }
 
     /// Returns the path to the static file directory.
     ///
     /// The result has been canonicalized, if possible.
-    pub fn get_static_file_directory(&self) -> PathBuf {
+    pub fn static_file_directory(&self) -> PathBuf {
         let path = self.config_directory.join(&self.proto.base_directory);
         path.canonicalize().ok().unwrap_or(path)
     }
 
     /// Makes a static file server filter.
     pub fn make_static_file_filter(&self) -> BoxedFilter<(impl Reply,)> {
-        filters::fs::dir(self.get_static_file_directory()).boxed()
+        filters::fs::dir(self.static_file_directory()).boxed()
     }
 }

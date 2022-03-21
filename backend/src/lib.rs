@@ -30,7 +30,7 @@ pub mod warp_server {
         let config = config::get_configuration_from_current_directory()
             .expect("Could not load configuration.");
 
-        let socket = SocketAddr::new(IpAddr::V6(Ipv6Addr::LOCALHOST), config.get_port());
+        let socket = SocketAddr::new(IpAddr::V6(Ipv6Addr::LOCALHOST), config.port());
 
         log::info!("Configuration: {:?}", config);
 
