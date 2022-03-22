@@ -3,6 +3,7 @@
 //! The library crate is designed only to help organize code for its binary
 //! crate twin.
 
+pub mod api;
 pub mod config;
 
 /// Initalize the logging system.
