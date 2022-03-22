@@ -79,8 +79,6 @@ pub struct Configuration {
     /// The parsed contents of the configuration file.
     proto: proto::ConfigurationPrototype,
     /// Where the configuration file was found.
-    ///
-    /// See [`Self::get_configuration_directory`].
     config_directory: PathBuf,
     /// Path to the configuration file.
     config_path: PathBuf,
