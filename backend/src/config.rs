@@ -29,12 +29,13 @@ pub const DEFAULT_CONFIGURATION_FILENAME: &str = "server_configuration.json";
 /// File 'schemas' for the configuration file
 mod proto {
     use serde::Deserialize;
+    use std::path::PathBuf;
 
     /// This is the main file 'schema'
     #[derive(Debug, Deserialize)]
     pub struct ConfigurationPrototype {
         /// Where the static content to should be found at.
-        pub base_directory: String,
+        pub base_directory: PathBuf,
         /// Which port the server is to listen from.
         pub port: u16,
     }
