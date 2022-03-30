@@ -8,7 +8,7 @@ use std::error::Error;
 use std::fmt::Display;
 use std::fmt::{self, Debug, Formatter};
 use std::fs::File;
-use std::io;
+use std::io::Error as IoError;
 use std::path::{Path, PathBuf};
 use warp::{
     filters::{self, BoxedFilter},
@@ -48,7 +48,7 @@ pub enum ConfigurationError {
     /// The specified configuration path is invalid.
     InvalidPath,
     /// For errors that are from [`io`].
-    IoError(io::Error),
+    IoError(IoError),
     /// For errors that are from [`serde`], or packages that implement file
     /// formats.
     SerdeError(serde_json::Error),
@@ -60,8 +60,8 @@ impl Display for ConfigurationError {
     }
 }
 
-impl From<std::io::Error> for ConfigurationError {
-    fn from(e: std::io::Error) -> Self {
+impl From<IoError> for ConfigurationError {
+    fn from(e: IoError) -> Self {
         Self::IoError(e)
     }
 }
