@@ -8,7 +8,7 @@ use std::error::Error;
 use std::fmt::Display;
 use std::fmt::{self, Debug, Formatter};
 use std::fs::File;
-use std::io::Error as IoError;
+use std::io::{BufReader, Error as IoError};
 use std::path::{Path, PathBuf};
 use warp::{
     filters::{self, BoxedFilter},
@@ -106,8 +106,9 @@ impl Configuration {
             .to_path_buf();
 
         let file = File::open(config_path.clone())?;
+        let reader = BufReader::new(file);
 
-        let proto = serde_json::from_reader(file)?;
+        let proto = serde_json::from_reader(reader)?;
 
         Ok(Configuration {
             proto,
