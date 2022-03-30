@@ -60,7 +60,7 @@ pub enum ConfigurationError {
     NotFound,
     /// The specified configuration path is invalid.
     InvalidPath,
-    /// For errors that are from [`io`].
+    /// For errors that are from [`std::io`].
     IoError(IoError),
     /// For errors that are from [`serde`], or packages that implement file
     /// formats.
