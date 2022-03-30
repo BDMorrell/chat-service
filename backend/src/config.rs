@@ -28,10 +28,10 @@ pub const DEFAULT_CONFIGURATION_FILENAME: &str = "server_configuration.json";
 
 /// File 'schemas' for the configuration file
 mod proto {
-    use serde::{Deserialize, Serialize};
+    use serde::Deserialize;
 
     /// This is the main file 'schema'
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Debug, Deserialize)]
     pub struct ConfigurationPrototype {
         /// Where the static content to should be found at.
         pub base_directory: String,
