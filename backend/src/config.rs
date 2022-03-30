@@ -9,6 +9,7 @@ use std::fmt::Display;
 use std::fmt::{self, Debug, Formatter};
 use std::fs::File;
 use std::io::{BufReader, Error as IoError};
+use std::net::{IpAddr, SocketAddr};
 use std::path::{Path, PathBuf};
 use warp::{
     filters::{self, BoxedFilter},
@@ -29,13 +30,24 @@ pub const DEFAULT_CONFIGURATION_FILENAME: &str = "server_configuration.json";
 /// File 'schemas' for the configuration file
 mod proto {
     use serde::Deserialize;
+    use std::net::{IpAddr, Ipv6Addr};
     use std::path::PathBuf;
+
+    fn default_address() -> IpAddr {
+        IpAddr::V6(Ipv6Addr::LOCALHOST)
+    }
 
     /// This is the main file 'schema'
     #[derive(Debug, Deserialize)]
     pub struct ConfigurationPrototype {
         /// Where the static content to should be found at.
         pub base_directory: PathBuf,
+        /// Which ip address to bind to.
+        ///
+        /// If this is unspecified in the configuration file, it defaults to the
+        /// IPv6 localhost address "::1".
+        #[serde(default = "default_address")]
+        pub address: IpAddr,
         /// Which port the server is to listen from.
         pub port: u16,
     }
@@ -137,9 +149,19 @@ impl Configuration {
 }
 
 impl Configuration {
-    /// Returns the port to be used.
+    /// Returns the port to use.
     pub fn port(&self) -> u16 {
         self.proto.port
+    }
+
+    /// Returns the address to bind to.
+    pub fn address(&self) -> IpAddr {
+        self.proto.address
+    }
+
+    /// Returns the socket address to use.
+    pub fn socket(&self) -> SocketAddr {
+        SocketAddr::new(self.address(), self.port())
     }
 
     /// Returns the directory where the configuration file was found.
