@@ -1,3 +1,4 @@
+use bytes::BytesMut;
 use http::Error as HttpError;
 use http::{Request, Response};
 use hyper::body::{Body, HttpBody};
@@ -7,17 +8,18 @@ pub async fn echo(req: Request<Body>) -> Result<Response<Body>, HttpError> {
     let (mut writer, responce_body) = Body::channel();
 
     tokio::spawn(async move {
-        writer
-            .send_data(format!("{} {} {:?}\r\n", req.method(), req.uri(), req.version()).into())
-            .await
-            .unwrap();
+        let mut heads = BytesMut::with_capacity(2 * 1024);
+        heads.extend_from_slice(
+            format!("{} {} {:?}\r\n", req.method(), req.uri(), req.version()).as_bytes(),
+        );
         for (key, value) in req.headers().iter() {
-            writer
-                .send_data(format!("{:?} {:?}\r\n", key, value).into())
-                .await
-                .unwrap();
+            heads.extend_from_slice(format!("{:?} {:?}\r\n", key, value).as_bytes());
         }
-        writer.send_data("\r\n".into()).await.unwrap();
+        heads.extend_from_slice(b"\r\n");
+
+        // TODO: figure out how to send the body and header in one packet, if possible
+
+        writer.send_data(heads.freeze()).await.unwrap();
         let mut body = req.into_body();
         let mut pinned_body = Pin::new(&mut body);
         while let Some(Ok(data)) = pinned_body.data().await {
