@@ -1,5 +1,5 @@
-use chat_backend::api;
-use chat_backend::config;
+use chat_server::api;
+use chat_server::config;
 use hyper::server::Server;
 use hyper::service::make_service_fn;
 use std::convert::Infallible;
@@ -7,7 +7,7 @@ use tower::service_fn;
 
 #[tokio::main]
 async fn main() {
-    chat_backend::init_log(false);
+    chat_server::init_log(false);
 
     let config = config::get_configuration_from_current_directory()
         .expect("Could not load server configuration");

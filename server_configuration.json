@@ -1,5 +1,5 @@
 {
     "port": 8080,
     "address": "::1",
-    "base_directory": "./frontend/dist"
+    "base_directory": "./site/dist"
 }
