@@ -1,0 +1,13 @@
+{
+  "name": "common",
+  "private": true,
+  "scripts": {
+    "build": "yarn node ./ready.js",
+    "prebuild": "yarn run tsc"
+  },
+  "devDependencies": {
+    "json-schema-to-typescript": "^10.1.5",
+    "typescript": "^4.6.3"
+  },
+  "dependencies": {}
+}
