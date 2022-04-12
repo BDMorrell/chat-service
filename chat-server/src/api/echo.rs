@@ -1,34 +1,51 @@
-use bytes::BytesMut;
+use bytes::Bytes;
 use http::Error as HttpError;
 use http::{Request, Response};
 use hyper::body::{Body, HttpBody};
-use std::pin::Pin;
+use std::error::Error as StdError;
+use tokio::sync::mpsc;
+use tokio_stream::wrappers::ReceiverStream;
+use tokio_stream::{Stream, StreamExt};
+
+use log::info;
+
+type AsyncError = Box<dyn StdError + Send + Sync + 'static>;
+type AsyncResult = Result<bytes::Bytes, AsyncError>;
+type IntoBody = Box<(dyn Stream<Item = AsyncResult> + Send + 'static)>;
 
 pub async fn echo(req: Request<Body>) -> Result<Response<Body>, HttpError> {
-    let (mut writer, responce_body) = Body::channel();
+    // let (mut writer, responce_body) = Body::channel();
+    let (writer, response_stream) = mpsc::channel::<AsyncResult>(16);
+    let response_body: IntoBody = Box::new(ReceiverStream::new(response_stream));
+    let response = Body::from(response_body);
+
+    info!("response is {:?}", response);
 
     tokio::spawn(async move {
-        let mut heads = BytesMut::with_capacity(2 * 1024);
-        heads.extend_from_slice(
-            format!("{} {} {:?}\r\n", req.method(), req.uri(), req.version()).as_bytes(),
-        );
+        let first_line = format!("{} {} {:?}\r\n", req.method(), req.uri(), req.version());
+        writer.send(Ok(first_line.into())).await.unwrap();
+
         for (key, value) in req.headers().iter() {
-            heads.extend_from_slice(format!("{:?} {:?}\r\n", key, value).as_bytes());
+            writer
+                .send(Ok(format!("{:?} {:?}\r\n", key, value).into()))
+                .await
+                .unwrap();
         }
-        heads.extend_from_slice(b"\r\n");
+        writer
+            .send(Ok(Bytes::from(b"\r\n" as &'static [u8])))
+            .await
+            .unwrap();
 
-        // TODO: figure out how to send the body and header in one packet, if possible
+        let mut body = Box::pin(req.into_body());
+        info!("request body is {:?}", body);
 
-        writer.send_data(heads.freeze()).await.unwrap();
-        let mut body = req.into_body();
-        let mut pinned_body = Pin::new(&mut body);
-        while let Some(Ok(data)) = pinned_body.data().await {
-            writer.send_data(data).await.unwrap();
+        while let Some(Ok(data)) = body.next().await {
+            writer.send(Ok(data)).await.unwrap();
         }
     });
 
     Response::builder()
         .status(200)
         .header("Content-Type", "text/plain")
-        .body(responce_body)
+        .body(response)
 }
