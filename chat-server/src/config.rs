@@ -2,15 +2,13 @@
 //!
 //! To load and use configurations, see [`Configuration`]. All errors will be of
 //! type [`ConfigurationError`].
-use serde_json;
-use std::env;
 use std::error::Error;
 use std::fmt::Display;
 use std::fmt::{self, Debug, Formatter};
-use std::fs::File;
-use std::io::{BufReader, Error as IoError};
+use std::io::Error as IoError;
 use std::net::{IpAddr, SocketAddr};
 use std::path::{Path, PathBuf};
+use std::{env, fs};
 use warp::{
     filters::{self, BoxedFilter},
     Filter, Reply,
@@ -25,7 +23,7 @@ pub fn get_configuration_from_current_directory() -> Result<Configuration, Confi
 }
 
 /// The default filename for the configuration file.
-pub const DEFAULT_CONFIGURATION_FILENAME: &str = "server_configuration.json";
+pub const DEFAULT_CONFIGURATION_FILENAME: &str = "server_configuration.toml";
 
 /// File 'schemas' for the configuration file
 mod proto {
@@ -64,7 +62,7 @@ pub enum ConfigurationError {
     IoError(IoError),
     /// For errors that are from [`serde`], or packages that implement file
     /// formats.
-    SerdeError(serde_json::Error),
+    TomlError(toml::de::Error),
 }
 
 impl Display for ConfigurationError {
@@ -78,9 +76,9 @@ impl From<IoError> for ConfigurationError {
         Self::IoError(e)
     }
 }
-impl From<serde_json::Error> for ConfigurationError {
-    fn from(e: serde_json::Error) -> Self {
-        Self::SerdeError(e)
+impl From<toml::de::Error> for ConfigurationError {
+    fn from(e: toml::de::Error) -> Self {
+        Self::TomlError(e)
     }
 }
 
@@ -118,10 +116,10 @@ impl Configuration {
             .ok_or(ConfigurationError::InvalidPath)?
             .to_path_buf();
 
-        let file = File::open(config_path.clone())?;
-        let reader = BufReader::new(file);
+        // Warning: blindly accepting the file like this may cause problems.
+        let buffer = fs::read_to_string(&config_path)?;
 
-        let proto = serde_json::from_reader(reader)?;
+        let proto = toml::from_str(&buffer)?;
 
         Ok(Configuration {
             proto,
