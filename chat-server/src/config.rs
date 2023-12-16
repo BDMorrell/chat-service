@@ -2,30 +2,50 @@
 //!
 //! To load and use configurations, see [`Configuration`]. All errors will be of
 //! type [`ConfigurationError`].
-use serde_json;
 use std::error::Error;
 use std::fmt::Display;
 use std::fmt::{self, Debug, Formatter};
-use std::fs::File;
-use std::io;
+use std::io::Error as IoError;
+use std::net::{IpAddr, SocketAddr};
 use std::path::{Path, PathBuf};
+use std::{env, fs};
 use warp::{
     filters::{self, BoxedFilter},
     Filter, Reply,
 };
 
+pub fn get_configuration_from_current_directory() -> Result<Configuration, ConfigurationError> {
+    let current_directory = env::current_dir()?;
+    Configuration::from_directory_or_ancestors(
+        &current_directory,
+        Path::new(DEFAULT_CONFIGURATION_FILENAME),
+    )
+}
+
 /// The default filename for the configuration file.
-pub const DEFAULT_CONFIGURATION_FILENAME: &str = "server_configuration.json";
+pub const DEFAULT_CONFIGURATION_FILENAME: &str = "server_configuration.toml";
 
 /// File 'schemas' for the configuration file
 mod proto {
-    use serde::{Deserialize, Serialize};
+    use serde::Deserialize;
+    use std::net::{IpAddr, Ipv6Addr};
+    use std::path::PathBuf;
+
+    fn default_address() -> IpAddr {
+        IpAddr::V6(Ipv6Addr::LOCALHOST)
+    }
 
     /// This is the main file 'schema'
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Debug, Deserialize)]
     pub struct ConfigurationPrototype {
         /// Where the static content to should be found at.
-        pub base_directory: String,
+        pub base_directory: PathBuf,
+        /// Which ip address to bind to.
+        ///
+        /// If this is unspecified in the configuration file, it defaults to the
+        /// IPv6 localhost address "::1".
+        #[serde(default = "default_address")]
+        pub address: IpAddr,
         /// Which port the server is to listen from.
         pub port: u16,
     }
@@ -38,11 +58,11 @@ pub enum ConfigurationError {
     NotFound,
     /// The specified configuration path is invalid.
     InvalidPath,
-    /// For errors that are from [`io`].
-    IoError(io::Error),
+    /// For errors that are from [`std::io`].
+    IoError(IoError),
     /// For errors that are from [`serde`], or packages that implement file
     /// formats.
-    SerdeError(serde_json::Error),
+    TomlError(toml::de::Error),
 }
 
 impl Display for ConfigurationError {
@@ -51,14 +71,14 @@ impl Display for ConfigurationError {
     }
 }
 
-impl From<std::io::Error> for ConfigurationError {
-    fn from(e: std::io::Error) -> Self {
+impl From<IoError> for ConfigurationError {
+    fn from(e: IoError) -> Self {
         Self::IoError(e)
     }
 }
-impl From<serde_json::Error> for ConfigurationError {
-    fn from(e: serde_json::Error) -> Self {
-        Self::SerdeError(e)
+impl From<toml::de::Error> for ConfigurationError {
+    fn from(e: toml::de::Error) -> Self {
+        Self::TomlError(e)
     }
 }
 
@@ -70,8 +90,6 @@ pub struct Configuration {
     /// The parsed contents of the configuration file.
     proto: proto::ConfigurationPrototype,
     /// Where the configuration file was found.
-    ///
-    /// See [`Self::get_configuration_directory`].
     config_directory: PathBuf,
     /// Path to the configuration file.
     config_path: PathBuf,
@@ -98,9 +116,10 @@ impl Configuration {
             .ok_or(ConfigurationError::InvalidPath)?
             .to_path_buf();
 
-        let file = File::open(config_path.clone())?;
+        // Warning: blindly accepting the file like this may cause problems.
+        let buffer = fs::read_to_string(&config_path)?;
 
-        let proto = serde_json::from_reader(file)?;
+        let proto = toml::from_str(&buffer)?;
 
         Ok(Configuration {
             proto,
@@ -128,34 +147,44 @@ impl Configuration {
 }
 
 impl Configuration {
-    /// Returns the port to be used.
-    pub fn get_port(&self) -> u16 {
+    /// Returns the port to use.
+    pub fn port(&self) -> u16 {
         self.proto.port
+    }
+
+    /// Returns the address to bind to.
+    pub fn address(&self) -> IpAddr {
+        self.proto.address
+    }
+
+    /// Returns the socket address to use.
+    pub fn socket(&self) -> SocketAddr {
+        SocketAddr::new(self.address(), self.port())
     }
 
     /// Returns the directory where the configuration file was found.
     ///
     /// This is especially useful for decoding relative file paths that were in
     /// the configuration file.
-    pub fn get_configuration_directory(&self) -> &Path {
+    pub fn configuration_directory(&self) -> &Path {
         self.config_directory.as_path()
     }
 
     /// Returns the [`Path`] to the configuration file.
-    pub fn get_configuration_file_path(&self) -> &Path {
+    pub fn configuration_file_path(&self) -> &Path {
         self.config_path.as_path()
     }
 
     /// Returns the path to the static file directory.
     ///
     /// The result has been canonicalized, if possible.
-    pub fn get_static_file_directory(&self) -> PathBuf {
+    pub fn static_file_directory(&self) -> PathBuf {
         let path = self.config_directory.join(&self.proto.base_directory);
         path.canonicalize().ok().unwrap_or(path)
     }
 
     /// Makes a static file server filter.
     pub fn make_static_file_filter(&self) -> BoxedFilter<(impl Reply,)> {
-        filters::fs::dir(self.get_static_file_directory()).boxed()
+        filters::fs::dir(self.static_file_directory()).boxed()
     }
 }

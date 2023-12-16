@@ -1,0 +1,5 @@
+[workspace]
+members = ["chat-server"]
+
+resolver = "2"
+
