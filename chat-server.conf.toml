@@ -1,0 +1,2 @@
+socket = "[::1]:8080"
+static_dir = "./static"
