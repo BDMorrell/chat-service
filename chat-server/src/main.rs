@@ -42,14 +42,6 @@ async fn async_main(config: Config) {
         .expect("Main loop server error.");
 }
 
-pub fn default_load_config() -> Result<Config, Box<dyn std::error::Error>> {
-    let config_name = Path::new("./chat-server.conf.toml");
-    let config_body = fs::read_to_string(config_name)?;
-    let mut config: Config = toml::from_str(&config_body)?;
-    config.static_dir = canonicalize_and_verify_directory(&config.static_dir)?;
-    Ok(config)
-}
-
 pub fn canonicalize_and_verify_directory(path: &Path) -> Result<PathBuf, std::io::Error> {
     let directory = path.canonicalize()?;
     if !(directory.is_dir()) {
@@ -60,6 +52,14 @@ pub fn canonicalize_and_verify_directory(path: &Path) -> Result<PathBuf, std::io
     } else {
         Ok(directory)
     }
+}
+
+pub fn default_load_config() -> Result<Config, Box<dyn std::error::Error>> {
+    let config_name = Path::new("./chat-server.conf.toml");
+    let config_body = fs::read_to_string(config_name)?;
+    let mut config: Config = toml::from_str(&config_body)?;
+    config.static_dir = canonicalize_and_verify_directory(&config.static_dir)?;
+    Ok(config)
 }
 
 #[derive(Debug, Deserialize)]
