@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="shade" cx="0.5" cy="0.5" r=".5" fx="0.4" fy="0.1">
+      <!-- Python: `for i in (n/100. for n in range(0, 101, 5)): print('<stop offset="{}" stop-opacity="{:.4g}" />'.format( i, (1 - cos( i*pi/2 ))**2.2/2 ))` -->
+      <stop offset="0" stop-opacity="0" />
+      <stop offset=".15" stop-opacity="1.862e-4" />
+      <stop offset=".25" stop-opacity="1.731e-3" />
+      <stop offset=".3" stop-opacity=".003813" />
+      <stop offset=".4" stop-opacity=".0131" />
+      <stop offset=".5" stop-opacity=".03355" />
+      <stop offset=".6" stop-opacity=".07116" />
+      <stop offset=".7" stop-opacity=".1321" />
+      <stop offset=".8" stop-opacity=".2217" />
+      <stop offset=".85" stop-opacity=".2786" />
+      <stop offset=".9" stop-opacity=".3439" />
+      <stop offset=".95" stop-opacity=".4177" />
+      <stop offset="1" stop-opacity=".5" />
+    </radialGradient>
+  </defs>
+  <g clip-path="circle() view-box">
+    <rect fill="#75a4f0" width="256" height="256" />
+    <g color="#efefef" transform="translate(0,-12)">
+      <path stroke="currentcolor" stroke-width="16" fill="none"
+        d="M 64,192 v -48 a 16,16,90,0,1,16,-16 H 176 a 16,16,90,0,1,16,16 V 192 M 128,64 v 128" />
+      <circle cx="128" cy="64" r="28" fill="currentcolor" />
+      <circle cx="64" cy="192" r="28" fill="currentcolor" />
+      <circle cx="128" cy="192" r="28" fill="currentcolor" />
+      <circle cx="192" cy="192" r="28" fill="currentcolor" />
+    </g>
+    <rect fill="url(#shade)" width="256" height="256" />
+  </g>
+</svg>

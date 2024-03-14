@@ -1,0 +1,46 @@
+body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto min-content;
+    justify-items: stretch;
+    height: 100vh;
+    margin: 0;
+}
+
+#mainView {
+    grid-area: 1 / 1 / 1 / 1;
+    position: relative;
+    align-self: start;
+    margin: 8px;
+    overflow: scroll;
+}
+
+#nodeView {
+    user-select: none;
+    background-color: lightgrey;
+    grid-area: 1 / 2 / 1 / 2;
+    align-self: stretch;
+    overflow: auto;
+    padding: 8px;
+}
+
+#breadCrumbs {
+    user-select: none;
+    background-color: darkgrey;
+    grid-area: 2 / 1 / 2 / 3;
+    min-height: 2.5rlh;
+    align-self: stretch;
+    padding: 8px;
+    & ul, & ol {
+        margin: 0;
+        padding: 0;
+    }
+}
+
+.breadcrumb {
+    display: inline-flex;
+    list-style-type: " > ";
+    & li {
+        margin-inline-start: 1rem;
+    }
+}
