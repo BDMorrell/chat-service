@@ -1,13 +1,10 @@
 use std::cmp::min;
 use std::ops::{Bound, RangeBounds};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 use time::serde::iso8601;
 use time::OffsetDateTime;
-
-/// A [`Mutex`] containing a [`Chatroom`]
-pub type API = Mutex<Chatroom>;
 
 /// A chat message.
 #[derive(Debug, Serialize, Deserialize)]
@@ -66,9 +63,7 @@ impl Chatroom {
             None
         } else {
             // We know that 0 <= start < end <= messages.len(), so we know start is in-bounds.
-            Some(Vec::from_iter(
-                self.messages[start..end].iter().cloned()
-            ))
+            Some(Vec::from_iter(self.messages[start..end].iter().cloned()))
         }
     }
 }
