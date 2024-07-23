@@ -1,5 +1,5 @@
 [package]
-name = "chat-server"
+name = "server"
 version = "0.1.0"
 edition = "2021"
 
@@ -22,3 +22,4 @@ toml = "0.8"
 # log = "0.4"
 tracing = "0.1"
 tracing-subscriber = {version = "0.3", features = ["env-filter", "fmt"]}
+chatroom = { version = "0.1.0", path = "../chatroom" }

@@ -1,5 +1,5 @@
 use axum::Router;
-use chat_server::config;
+use server::config;
 use tower_http::services::ServeDir;
 use tracing::{info, Level};
 use tracing_subscriber::EnvFilter;
