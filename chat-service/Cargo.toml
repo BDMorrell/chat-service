@@ -1,0 +1,11 @@
+[package]
+name = "chat-service"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chatroom = { version = "0.1.0", path = "../chatroom" }
+axum = {workspace = true}
+tokio = {workspace = true}
+serde = {workspace = true}
+tower = {workspace = true}

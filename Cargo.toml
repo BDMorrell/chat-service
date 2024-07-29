@@ -2,7 +2,13 @@
 members = [
     "server",
     "chatroom",
+    "chat-service",
 ]
 
 resolver = "2"
 
+[workspace.dependencies]
+axum = "0.7"
+tokio = {version = "1", features = ["full"]}
+serde = {version = "1", features = ["derive"]}
+tower = {version = "0.4", features = ["full"]}
