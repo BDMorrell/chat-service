@@ -1,0 +1,71 @@
+body {
+    margin: 0;
+}
+
+header {
+    background-color: lightgrey;
+    border-bottom: 1pt solid darkgrey;
+    margin-bottom: 1em;
+
+    & p {
+        margin: 0;
+    }
+}
+
+.message {
+    margin: 1em;
+    border-left: 3pt solid black;
+    border-top: 1pt solid black;
+
+    &>* {
+        margin: 3pt 5pt;
+    }
+
+    & .metadata {
+        display: flex;
+        border-bottom: 1pt solid black;
+    }
+
+    & .byLine {
+        font-family: monospace;
+        font-weight: bold;
+    }
+
+    & .timeLine {
+        opacity: 80%;
+        margin-left: auto;
+        font-weight: lighter;
+        font-size: small;
+    }
+}
+
+#PostingForm {
+    border-top: 2pt solid black;
+    background-color: white;
+    margin-top: 5em;
+    position: sticky;
+    bottom: 0;
+    padding: 5pt;
+    display: grid;
+    grid-template-columns: [start] max-content [middle] auto [right];
+    gap: 5pt 0;
+
+    &>* {
+        display: contents;
+    }
+
+    & label {
+        grid-column: start / middle;
+        text-align: right;
+    }
+
+    & input,
+    & textarea {
+        grid-column: middle / right;
+        padding: 3pt;
+        border: 1pt solid black;
+        border-radius: 3pt;
+        resize: none;
+        overflow-y: auto;
+    }
+}
