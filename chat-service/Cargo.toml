@@ -8,7 +8,7 @@ chatroom = { version = "0.1.0", path = "../chatroom" }
 axum = {workspace = true}
 tokio = {workspace = true}
 serde = {workspace = true, features = ["rc"]}
-tower = {workspace = true}
+tower-http = {workspace = true}
 http = {workspace = true}
 
 # [dev-dependencies]

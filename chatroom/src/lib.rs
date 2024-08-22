@@ -18,22 +18,57 @@ pub struct Message {
     pub body: String,
 }
 
+/// A chat message to be added to a [`Chatroom`].
+///
+/// SECURITY TODO: Currently, there is no validation ofther than the message
+/// seems to be utf-8. This implementation currrently does not validate,
+/// normalize, nor remove control characters.
+#[derive(Debug, Deserialize)]
+pub struct IncomingMessage {
+    /// Who the message came from.
+    pub sender: String,
+    /// The actual message.
+    pub body: String,
+}
+
+impl From<IncomingMessage> for Message {
+    fn from(value: IncomingMessage) -> Self {
+        Self {
+            time: OffsetDateTime::now_utc(),
+            sender: value.sender,
+            body: value.body,
+        }
+    }
+}
+
+impl IncomingMessage {
+    /// Make sure a message has nonempty fields.
+    ///
+    /// SECURITY TODO: Currently, there is no validation ofther than the message
+    /// seems to be utf-8. This implementation currrently does not validate,
+    /// normalize, nor remove control characters.
+    pub fn is_valid(&self) -> bool {
+        !self.sender.is_empty() && !self.body.is_empty()
+    }
+}
+
 /// A room that contains [`Message`]s.
 ///
 /// To be held in a [`Mutex`].
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Chatroom {
     /// The message queue.
     messages: Vec<Arc<Message>>,
 }
 
 impl Chatroom {
-    pub fn new() -> Arc<Chatroom> {
-        let messages = Vec::new();
-
-        Arc::new(Chatroom { messages })
+    pub fn new() -> Self {
+        Self::default()
     }
 
+    /// Appends a message to the chatroom.
+    ///
+    /// Returns the index the message was placed into.
     pub fn add(&mut self, message: Message) -> usize {
         self.messages.push(Arc::new(message));
         self.messages.len() - 1
