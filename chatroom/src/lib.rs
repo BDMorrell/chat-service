@@ -75,7 +75,7 @@ impl Chatroom {
     }
 
     /// Retrives a message from the chatroom.
-    /// 
+    ///
     /// Returns [`None`] when given an index that is out of bounds.
     pub fn get(&self, index: usize) -> Option<Arc<Message>> {
         self.messages.get(index).cloned()
@@ -205,7 +205,10 @@ mod tests {
         room.add(msg0.clone());
         room.add(msg1.clone());
 
-        assert_eq!(Some([Arc::new(msg0.clone())].into()), room.try_get_range(0..=0)); // inclusive
+        assert_eq!(
+            Some([Arc::new(msg0.clone())].into()),
+            room.try_get_range(0..=0)
+        ); // inclusive
         assert_eq!(Some([Arc::new(msg0)].into()), room.try_get_range(0..1)); // exclusive
     }
 
@@ -216,7 +219,10 @@ mod tests {
         room.add(msg0.clone());
         room.add(msg1.clone());
 
-        assert_eq!(Some([Arc::new(msg1.clone())].into()), room.try_get_range(1..=1)); // inclusive
+        assert_eq!(
+            Some([Arc::new(msg1.clone())].into()),
+            room.try_get_range(1..=1)
+        ); // inclusive
         assert_eq!(Some([Arc::new(msg1)].into()), room.try_get_range(1..2)); // exclusive
     }
 
@@ -227,8 +233,14 @@ mod tests {
             room.add(msg.clone());
         }
 
-        assert_eq!(Some(get_demo_messages().map(|m| Arc::new(m)).into()), room.try_get_range(0..=1)); // inclusive
-        assert_eq!(Some(get_demo_messages().map(|m| Arc::new(m)).into()), room.try_get_range(0..2)); // exclusive
+        assert_eq!(
+            Some(get_demo_messages().map(|m| Arc::new(m)).into()),
+            room.try_get_range(0..=1)
+        ); // inclusive
+        assert_eq!(
+            Some(get_demo_messages().map(|m| Arc::new(m)).into()),
+            room.try_get_range(0..2)
+        ); // exclusive
     }
 
     #[test]
@@ -238,8 +250,14 @@ mod tests {
             room.add(msg.clone());
         }
 
-        assert_eq!(Some(get_demo_messages().map(|m| Arc::new(m)).into()), room.try_get_range(..=1));
-        assert_eq!(Some(get_demo_messages().map(|m| Arc::new(m)).into()), room.try_get_range(..));
+        assert_eq!(
+            Some(get_demo_messages().map(|m| Arc::new(m)).into()),
+            room.try_get_range(..=1)
+        );
+        assert_eq!(
+            Some(get_demo_messages().map(|m| Arc::new(m)).into()),
+            room.try_get_range(..)
+        );
         let [msg1, msg2] = get_demo_messages();
         assert_eq!(Some([Arc::new(msg1)].into()), room.try_get_range(..1));
         assert_eq!(Some([Arc::new(msg2)].into()), room.try_get_range(1..));
@@ -253,8 +271,14 @@ mod tests {
             room.add(msg.clone());
         }
 
-        assert_eq!(Some(get_demo_messages().map(|m| Arc::new(m)).into()), room.try_get_range(0..=1024)); // inclusive
-        assert_eq!(Some(get_demo_messages().map(|m| Arc::new(m)).into()), room.try_get_range(0..1024)); // exclusive
+        assert_eq!(
+            Some(get_demo_messages().map(|m| Arc::new(m)).into()),
+            room.try_get_range(0..=1024)
+        ); // inclusive
+        assert_eq!(
+            Some(get_demo_messages().map(|m| Arc::new(m)).into()),
+            room.try_get_range(0..1024)
+        ); // exclusive
     }
 
     #[test]
@@ -289,7 +313,10 @@ mod tests {
             room.add(msg.clone());
         }
 
-        assert_eq!(Some(get_demo_messages().map(|m| Arc::new(m)).into()), room.try_get_range(usize::MIN..=usize::MAX));
+        assert_eq!(
+            Some(get_demo_messages().map(|m| Arc::new(m)).into()),
+            room.try_get_range(usize::MIN..=usize::MAX)
+        );
     }
 
     #[test]
