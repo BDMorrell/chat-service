@@ -82,7 +82,7 @@ impl Chatroom {
     }
 
     /// Tries to get the range specified.
-    /// 
+    ///
     /// [`None`] is returned if the range's `start` > `end`, or if `start`
     /// index is not a vliad index (i.e. too large). If `end` is too large, it
     /// is treated as though `end` is [`Bound::Unbounded`], which just means
@@ -91,10 +91,12 @@ impl Chatroom {
         // start and end are both inclusive
         let start: usize = match index.start_bound() {
             Bound::Included(&i) => i,
-            // I'm not aware of a range that has an exclusive start, so this
-            // next line shouldn't be able to run, which means it shouldn't be
-            // able to panic.
-            Bound::Excluded(&i) => i + 1, // Code included for completeness.
+            // The next two cases are entirely possible for anyone who makes a custom implementation for [`RangeBounds`].
+            // NOTE: I really don't know if I should make such an abomination for testing purposes...
+            Bound::Excluded(&usize::MAX) => {
+                return None; // follows documentation, because in this case `start` > any possible value of `end`
+            }
+            Bound::Excluded(&i) => i + 1,
             Bound::Unbounded => 0,
         };
         // end is inclusive
@@ -102,7 +104,10 @@ impl Chatroom {
             self.messages.len() - 1,
             match index.end_bound() {
                 Bound::Included(&i) => i,
-                Bound::Excluded(&i) => i.saturating_sub(1), // in case the end is 0
+                Bound::Excluded(&0) => {
+                    return None; // follows documentation, because in this case `end` < any possible value of `start`
+                }
+                Bound::Excluded(&i) => i - 1,
                 Bound::Unbounded => usize::MAX, // equivalent to messages.len() because of the surrounding min()
             },
         ); // the min function makes sure that end <= messages.len()
