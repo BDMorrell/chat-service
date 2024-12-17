@@ -1,7 +1,7 @@
 use axum::{http::StatusCode, Router};
-use chat_service::ChatServiceState;
 use chatroom::{Chatroom, IncomingMessage};
 use server::config;
+use server::services::chat::{self, ChatServiceState};
 use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing::{info, Level};
 use tracing_subscriber::EnvFilter;
@@ -41,7 +41,7 @@ async fn async_main(config: config::Config) {
         .into(),
     );
     let chat_service_state = ChatServiceState::with_room(chatroom);
-    let chat_service_router = chat_service::router().with_state(chat_service_state);
+    let chat_service_router = chat::router().with_state(chat_service_state);
     let api = Router::new()
         .nest("/chat", chat_service_router)
         .fallback(just_not_found);
