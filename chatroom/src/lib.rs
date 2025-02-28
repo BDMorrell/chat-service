@@ -81,42 +81,31 @@ impl Chatroom {
         self.messages.get(index).cloned()
     }
 
-    /// Tries to get the range specified.
+    /// Tries to get the chat history range specified.
     ///
-    /// [`None`] is returned if the range's `start` > `end`, or if `start`
-    /// index is not a vliad index (i.e. too large). If `end` is too large, it
-    /// is treated as though `end` is [`Bound::Unbounded`], which just means
-    /// that it grabs all messages until the end.
+    /// The end of the given range is lowered to the size of the message
+    /// history if needed. [`None`] is returned if the resulting range is
+    /// invalid.
     pub fn try_get_range(&self, index: impl RangeBounds<usize>) -> Option<Vec<Arc<Message>>> {
-        // start and end are both inclusive
-        let start: usize = match index.start_bound() {
-            Bound::Included(&i) => i,
-            // The next two cases are entirely possible for anyone who makes a custom implementation for [`RangeBounds`].
-            // NOTE: I really don't know if I should make such an abomination for testing purposes...
-            Bound::Excluded(&usize::MAX) => {
-                return None; // follows documentation, because in this case `start` > any possible value of `end`
-            }
-            Bound::Excluded(&i) => i + 1,
-            Bound::Unbounded => 0,
-        };
-        // end is inclusive
-        let end: usize = min(
-            self.messages.len() - 1,
+        // end is exclusive so we can have the empty range `..0` be valid
+        let end = Bound::Excluded(min(
+            self.messages.len(),
             match index.end_bound() {
-                Bound::Included(&i) => i,
-                Bound::Excluded(&0) => {
-                    return None; // follows documentation, because in this case `end` < any possible value of `start`
-                }
-                Bound::Excluded(&i) => i - 1,
-                Bound::Unbounded => usize::MAX, // equivalent to messages.len() because of the surrounding min()
+                // In this first case, there's the nuance of usize::MAX: treat
+                // it as if they said `Bound::Unbounded` and acknowledge that
+                // you will Out of Memory before the exact nuances are
+                // important.
+                Bound::Included(&i) => i.saturating_add(1),
+                Bound::Excluded(&i) => i,
+                Bound::Unbounded => usize::MAX, // defer to surrounding min()
             },
-        ); // the min function makes sure that end <= messages.len()
-        if start > end {
-            None
-        } else {
-            // We know that 0 <= start < end <= messages.len(), so we know start is in-bounds.
-            Some(Vec::from_iter(self.messages[start..=end].iter().cloned()))
-        }
+        ));
+        Some(Vec::from_iter(
+            self.messages
+                .get((index.start_bound().cloned(), end))?
+                .iter()
+                .cloned(),
+        ))
     }
 }
 
@@ -255,43 +244,78 @@ mod tests {
         let msg2 = make_get_demo_messages()[1].clone();
         assert_eq!(Some([Arc::new(msg1)].into()), room.try_get_range(..1));
         assert_eq!(Some([Arc::new(msg2)].into()), room.try_get_range(1..));
-        assert_eq!(None, room.try_get_range(..0));
+        assert_eq!(Some([].into()), room.try_get_range(..0));
     }
 
     #[test]
     fn try_get_too_many_messages() {
         let (room, _) = make_test_room_setup();
 
-        assert_eq!(Some(make_arc_demo_messages()), room.try_get_range(0..=1024)); // inclusive
-        assert_eq!(Some(make_arc_demo_messages()), room.try_get_range(0..1024)); // exclusive
+        // inclusive
+        assert_eq!(Some(make_arc_demo_messages()), room.try_get_range(0..=1024));
+        // exclusive
+        assert_eq!(Some(make_arc_demo_messages()), room.try_get_range(0..1024));
     }
 
     #[test]
     fn try_get_messages_out_of_bounds() {
         let (room, _) = make_test_room_setup();
 
-        assert_eq!(None, room.try_get_range(512..=1024)); // inclusive
-        assert_eq!(None, room.try_get_range(512..1024)); // exclusive
+        // inclusive
+        assert_eq!(None, room.try_get_range(512..=1024));
+        // exclusive
+        assert_eq!(None, room.try_get_range(512..1024));
     }
 
     #[test]
     fn try_get_reversed_ranges() {
         let (room, _) = make_test_room_setup();
 
-        assert_eq!(None, room.try_get_range(1024..=5));
-        assert_eq!(None, room.try_get_range(1024..6));
+        assert_eq!(None, room.try_get_range(2..=0));
+        assert_eq!(None, room.try_get_range(2..0));
         assert_eq!(None, room.try_get_range(1..0));
-        assert_eq!(None, room.try_get_range(1..1));
-        assert_eq!(None, room.try_get_range(1..=0));
+    }
+
+    #[test]
+    fn try_get_empty_range() {
+        let (room, _) = make_test_room_setup();
+
+        assert_eq!(Some([].into()), room.try_get_range(0..0));
+        assert_eq!(Some([].into()), room.try_get_range(1..1));
+    }
+
+    #[test]
+    fn try_get_empty_range_from_one_to_zero_inclusive() {
+        // 1..=0 doesn't make any sense for it to be valid, so first we test
+        // that it is, in fact, valid.
+        let list = vec![5, 10, 15, 20, 25];
+        let slice = &list[1..=0];
+        assert_eq!(0, slice.len());
+
+        let (room, _) = make_test_room_setup();
+
+        assert_eq!(Some([].into()), room.try_get_range(1..=0));
     }
 
     #[test]
     fn try_get_usize_extrema() {
         let (room, _) = make_test_room_setup();
 
+        // does an `Inclusive` end work essentially the same as an `Unbounded` end?
         assert_eq!(
             Some(make_arc_demo_messages()),
             room.try_get_range(usize::MIN..=usize::MAX)
+        );
+
+        // usize::MAX - 1 to not cause an overflow with a sane implementation
+        assert_eq!(
+            Some(make_arc_demo_messages()),
+            room.try_get_range(usize::MIN..=usize::MAX - 1)
+        );
+        // excluding the end should not cause an overflow with a sane implementation
+        assert_eq!(
+            Some(make_arc_demo_messages()),
+            room.try_get_range(usize::MIN..usize::MAX)
         );
     }
 
