@@ -1,0 +1,8 @@
+[package]
+name = "chatroom"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = {workspace=true, features = ["derive", "rc"]}
+time = {version = "0.3", features = ["formatting", "parsing", "local-offset", "serde"]}

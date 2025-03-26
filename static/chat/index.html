@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="module" src="./chatter.js"></script>
+    <link rel="stylesheet" href="./chat.css">
+    <title>Chat client</title>
+</head>
+
+<body>
+    <header>
+        <p>You can go back to the <a href="/">main page</a>.</p>
+    </header>
+    <main>
+        <noscript>
+            <p>
+                You have disabled JavaScript.
+            </p>
+            <p>
+                The chat message log requires JavaScript to view, although you
+                should be able to submit messages, but that may require
+                JavaScript at some point in the future.
+            </p>
+        </noscript>
+        <div role="feed" id="ChatView"></div>
+        <form action="/api/chat/post/form" method="post" id="PostingForm">
+            <div>
+                <label for="sender">Name: </label>
+                <input type="text" name="sender" id="sender" required>
+            </div>
+            <div>
+                <label for="body">Message: </label>
+                <textarea name="body" id="body" required></textarea>
+            </div>
+            <div>
+                <input type="submit">
+            </div>
+        </form>
+    </main>
+</body>
+
+</html>

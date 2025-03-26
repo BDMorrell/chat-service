@@ -1,21 +1,23 @@
 [package]
-name = "chat-server"
+name = "server"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = "0.7"
-# tower = {version = "0.4", features = ["full"]}
-tower-http = {version = "0.5", features = ["full"]}
+chatroom = { version = "0.1.0", path = "../chatroom" }
 
-tokio = {version = "1", features = ["full"]}
+axum = {workspace = true}
+# tower = {version = "0.4", features = ["full"]}
+tower-http = {workspace = true}
+
+tokio = {workspace = true}
 
 # hyper = {version = "1", features = ["tracing", "http1", "http2", "server"]}
 # hyper-util = {version = "0.1", features = ["server-auto", "tokio"]}
 
 # chrono = "0.4"
 
-serde = {version = "1", features = ["derive"]}
+serde = {workspace = true, features = ["rc"]}
 # serde_json = "1"
 toml = "0.8"
 
