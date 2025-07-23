@@ -1,4 +1,3 @@
-use std::cmp::min;
 use std::ops::{Bound, RangeBounds};
 use std::sync::Arc;
 
@@ -74,38 +73,36 @@ impl Chatroom {
         self.messages.len() - 1
     }
 
-    /// Retrives a message from the chatroom.
+    /// Retrives a message from the chatroom given an index.
     ///
     /// Returns [`None`] when given an index that is out of bounds.
     pub fn get(&self, index: usize) -> Option<Arc<Message>> {
         self.messages.get(index).cloned()
     }
 
-    /// Tries to get the chat history range specified.
+    /// Retrives messages from the chatroom given a range.
     ///
-    /// The end of the given range is lowered to the size of the message
-    /// history if needed. [`None`] is returned if the resulting range is
-    /// invalid.
-    pub fn try_get_range(&self, index: impl RangeBounds<usize>) -> Option<Vec<Arc<Message>>> {
-        // end is exclusive so we can have the empty range `..0` be valid
-        let end = Bound::Excluded(min(
-            self.messages.len(),
-            match index.end_bound() {
-                // In this first case, there's the nuance of usize::MAX: treat
-                // it as if they said `Bound::Unbounded` and acknowledge that
-                // you will Out of Memory before the exact nuances are
-                // important.
-                Bound::Included(&i) => i.saturating_add(1),
-                Bound::Excluded(&i) => i,
-                Bound::Unbounded => usize::MAX, // defer to surrounding min()
-            },
-        ));
-        Some(Vec::from_iter(
-            self.messages
-                .get((index.start_bound().cloned(), end))?
-                .iter()
-                .cloned(),
-        ))
+    /// If the end of the given range exceeds the number of messages, then all
+    /// messages in the range, up until the last message, will be returned.
+    /// Returns [`None`] for all other cases where the given range is out of
+    /// bounds.
+    pub fn try_get_range<I>(&self, range: I) -> Option<Vec<Arc<Message>>>
+    where
+        I: RangeBounds<usize>,
+    {
+        let total_messages = self.messages.len();
+        let end_of_all_messages: Bound<usize> = Bound::Excluded(total_messages);
+
+        let start: Bound<usize> = range.start_bound().cloned();
+        let end: Bound<usize> = match range.end_bound() {
+            // if we're being asked for more messages than exist...
+            Bound::Included(&num) if num >= total_messages => end_of_all_messages,
+            Bound::Excluded(&num) if num > total_messages => end_of_all_messages,
+            // otherwise the end bound should be used
+            bound => bound.cloned(),
+        };
+        let slice: &[Arc<Message>] = self.messages.get((start, end))?;
+        Some(slice.to_owned())
     }
 }
 
@@ -281,6 +278,7 @@ mod tests {
         let (room, _) = make_test_room_setup();
 
         assert_eq!(Some([].into()), room.try_get_range(0..0));
+        assert_eq!(Some([].into()), room.try_get_range(..0));
         assert_eq!(Some([].into()), room.try_get_range(1..1));
     }
 
