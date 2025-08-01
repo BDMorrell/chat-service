@@ -3,7 +3,7 @@ use chatroom::{Chatroom, IncomingMessage};
 use server::config;
 use server::services::chat::{self, ChatServiceState};
 use tower_http::{services::ServeDir, trace::TraceLayer};
-use tracing::{info, Level};
+use tracing::{error, info, Level};
 use tracing_subscriber::EnvFilter;
 
 fn main() {
@@ -26,10 +26,6 @@ fn main() {
 }
 
 async fn async_main(config: config::Config) {
-    let listener = tokio::net::TcpListener::bind(config.socket)
-        .await
-        .expect("Could not start the socket listener.");
-
     let mut chatroom = Chatroom::new();
     // preload a message to remove an edge case.
     // TODO: try not preloading a message.
@@ -47,10 +43,26 @@ async fn async_main(config: config::Config) {
         .fallback(just_not_found);
     let router = Router::new()
         .nest("/api", api)
-        .nest_service("/", ServeDir::new(&config.static_dir))
+        .fallback_service(ServeDir::new(&config.static_dir))
         .layer(TraceLayer::new_for_http());
 
-    info!("Listening for connections on {}.", config.socket);
+    info!("Requesting to listen on {}", config.socket);
+    let listener: tokio::net::TcpListener = match tokio::net::TcpListener::bind(config.socket).await
+    {
+        Ok(listener) => {
+            // I don't know which circumstaces would cause this next unwrap to panic
+            let local_addr = listener.local_addr().unwrap();
+            info!(
+                "Requested port {}. Listening on {}",
+                config.socket, local_addr
+            );
+            listener
+        }
+        Err(err) => {
+            error!("Requested port {}. Bind error: {}", config.socket, err);
+            panic!("Couldn't bind to the given port!");
+        }
+    };
 
     axum::serve(listener, router)
         .await
