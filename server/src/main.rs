@@ -1,7 +1,9 @@
 use axum::{http::StatusCode, Router};
 use chatroom::{Chatroom, IncomingMessage};
-use server::config;
-use server::services::chat::{self, ChatServiceState};
+use server::{
+    config,
+    services::chat::{self, ChatServiceState},
+};
 use tower_http::{services::ServeDir, trace::TraceLayer};
 use tracing::{error, info, Level};
 use tracing_subscriber::EnvFilter;

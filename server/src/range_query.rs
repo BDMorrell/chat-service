@@ -1,6 +1,9 @@
 use std::ops::{Bound, RangeBounds};
 
-use axum::{extract::{rejection::QueryRejection, Query}, http::Uri};
+use axum::{
+    extract::{rejection::QueryRejection, Query},
+    http::Uri,
+};
 use serde::Deserialize;
 
 /// A [`serde::Deserialize`] type for [`core::ops::Range<usize>`] and family.
@@ -30,7 +33,7 @@ impl RangeQuery {
     }
 
     /// Parses a Range Query from a given [`Uri`].
-    /// 
+    ///
     /// # Implementation Notes
     /// Uses Axum's [`axum::extract::Query::try_from_uri`] to parse.
     pub fn try_parse_from_uri(uri: &Uri) -> Result<RangeQuery, QueryRejection> {
