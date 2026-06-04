@@ -19,7 +19,7 @@ impl ChatServiceState {
         }
     }
 
-    pub fn chatroom_lock(&self) -> impl Future<Output = MutexGuard<Chatroom>> {
+    pub fn chatroom_lock(&self) -> impl Future<Output = MutexGuard<'_, Chatroom>> {
         self.chatroom.lock()
     }
 }
