@@ -1,3 +1,5 @@
+//! A chatroom service.
+
 use std::future::Future;
 use std::sync::Arc;
 
@@ -6,18 +8,25 @@ use chatroom::{Chatroom, IncomingMessage, Message};
 use tokio::sync::{Mutex, MutexGuard};
 use tower_http::limit::RequestBodyLimitLayer;
 
+/// Holds a [`Chatroom`].
 #[derive(Debug, Clone)]
 pub struct ChatServiceState {
     chatroom: Arc<Mutex<Chatroom>>,
 }
 
 impl ChatServiceState {
+    /// Initialize a [`ChatServiceState`] with an already existing [`Chatroom`].
     pub fn with_room(chatroom: Chatroom) -> Self {
         Self {
             chatroom: Arc::new(Mutex::new(chatroom)),
         }
     }
 
+    /// Creates a `MutexGuard` to access the internal [`Chatroom`].
+    ///
+    /// You SHOULD make sure you drop the `MutexGuard` in a normal
+    /// (non-stack-unwinding) manner. There MAY be no mechanisms to try and
+    /// recover this object if it was dropped in a panic state.
     pub fn chatroom_lock(&self) -> impl Future<Output = MutexGuard<'_, Chatroom>> {
         self.chatroom.lock()
     }
@@ -29,6 +38,7 @@ impl Default for ChatServiceState {
     }
 }
 
+/// Creates a router with state that exposes an API.
 pub fn router() -> Router<ChatServiceState> {
     Router::new()
         .route("/post/form", routing::post(post_form))
@@ -37,6 +47,7 @@ pub fn router() -> Router<ChatServiceState> {
         .route("/get/all", routing::get(get_all))
 }
 
+/// Retrieve all messages in the [`Chatroom`] state.
 async fn get_all(State(state): State<ChatServiceState>) -> (StatusCode, Json<Vec<Arc<Message>>>) {
     let chat_state: Option<Vec<Arc<Message>>> = {
         // Isolate the Mutex from any function errors and/or panics
@@ -50,6 +61,7 @@ async fn get_all(State(state): State<ChatServiceState>) -> (StatusCode, Json<Vec
     }
 }
 
+/// Adds messages getting POSTed to this API.
 async fn post(state: ChatServiceState, message: IncomingMessage) -> (StatusCode, String) {
     if message.is_valid() {
         let complete_message: Message = message.into();
@@ -62,6 +74,7 @@ async fn post(state: ChatServiceState, message: IncomingMessage) -> (StatusCode,
     }
 }
 
+/// Handles a `[...]/x-www-form-urlencoded` message.
 async fn post_form(
     State(state): State<ChatServiceState>,
     Form(message): Form<IncomingMessage>,
@@ -69,6 +82,7 @@ async fn post_form(
     post(state, message).await
 }
 
+/// Handles a JSON-formatted message.
 async fn post_json(
     State(state): State<ChatServiceState>,
     Json(message): Json<IncomingMessage>,
