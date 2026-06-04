@@ -53,7 +53,7 @@ impl IncomingMessage {
 
 /// A room that contains [`Message`]s.
 ///
-/// To be held in a [`Mutex`].
+/// This structure is meant to be heald inside of a `Mutex`.
 #[derive(Debug, Default)]
 pub struct Chatroom {
     /// The message queue.
@@ -61,6 +61,7 @@ pub struct Chatroom {
 }
 
 impl Chatroom {
+    /// Creates an empty [`Chatroom`].
     pub fn new() -> Self {
         Self::default()
     }
