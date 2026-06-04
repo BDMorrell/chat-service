@@ -55,7 +55,7 @@ async fn post(state: ChatServiceState, message: IncomingMessage) -> (StatusCode,
     if message.is_valid() {
         let complete_message: Message = message.into();
         let mut lock = state.chatroom_lock().await;
-        let index_placed = lock.deref_mut().add(complete_message);
+        let index_placed = lock.add(complete_message);
         drop(lock);
         (StatusCode::CREATED, index_placed.to_string())
     } else {
