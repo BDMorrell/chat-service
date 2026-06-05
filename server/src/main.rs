@@ -1,7 +1,8 @@
 use axum::{http::StatusCode, Router};
-use chatroom::{Chatroom, IncomingMessage};
 use server::{
     config,
+    chat::api_types::{IncomingMessage},
+    chat::state::{Chatroom},
     services::chat::{self, ChatServiceState},
 };
 use tower_http::{services::ServeDir, trace::TraceLayer};

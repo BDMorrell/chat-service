@@ -1,10 +1,11 @@
 //! A chatroom service.
+use crate::chat::api_types::IncomingMessage;
+use crate::chat::state::{Chatroom, Message};
 
 use std::future::Future;
 use std::sync::Arc;
 
 use axum::{extract::State, http::StatusCode, routing, Form, Json, Router};
-use chatroom::{Chatroom, IncomingMessage, Message};
 use tokio::sync::{Mutex, MutexGuard};
 use tower_http::limit::RequestBodyLimitLayer;
 
