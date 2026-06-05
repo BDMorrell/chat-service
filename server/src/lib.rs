@@ -1,4 +1,4 @@
-/// Parts for building an HTML server.
+//! Parts for building an HTML server.
 
 pub mod config;
 pub mod range_query;
